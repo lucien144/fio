@@ -3,7 +3,7 @@
 namespace Fio;
 
 /**
- * A wrapper for Fio bank's API to simplify access 
+ * A wrapper for Fio bank's API to simplify access
  * to user's transactions and account information
  *
  * @copyright Copyright (c) 2012, Pavel Plzák
@@ -13,37 +13,37 @@ namespace Fio;
  */
 class Fio
 {
-	
+
 	/** @var string */
 	private $token;
-	
+
 	/** @var string */
 	private $baseUrl = 'https://www.fio.cz/ib_api/rest';
-	
-	
-	
-	public function getBaseUrl() 
+
+
+
+	public function getBaseUrl()
 	{
 		return $this->baseUrl;
 	}
 
-	public function setBaseUrl($baseUrl) 
+	public function setBaseUrl($baseUrl)
 	{
 		$this->baseUrl = $baseUrl;
 	}
 
-		
-	
-	
-	public function __construct($token) 
+
+
+
+	public function __construct($token)
 	{
 		$this->token = $token;
 	}
-	
-	
-	
+
+
+
 	/**
-	 * Returns transactions in given period 
+	 * Returns transactions in given period
 	 * @param DateTime $from
 	 * @param DateTime $to
 	 * @return TransactionList
@@ -52,12 +52,12 @@ class Fio
 	{
 		$url = $this->buildRequestUrl('get', 'periods', array($from->format('Y-m-d'), $to->format('Y-m-d')));
 		$result = $this->callRequest($url);
-		
+
 		return TransactionList::create($result->accountStatement, $from, $to);
 	}
-	
-	
-	
+
+
+
 	/**
 	 * Returns official transaction summary
 	 * @param int $year summary of which year
@@ -68,13 +68,13 @@ class Fio
 	{
 		$url = $this->buildRequestUrl('get', 'by-id', array($year, $summaryNumber));
 		$result = $this->callRequest($url);
-		
+
 		return TransactionList::create($result->accountStatement);
 	}
-	
-	
-	
-	/** 
+
+
+
+	/**
 	 * Returns last transactions since set up marker
 	 * @return TransactionList
 	 */
@@ -86,9 +86,9 @@ class Fio
 		return TransactionList::create($result->accountStatement);
 	}
 
-	
-	
-	/** 
+
+
+	/**
 	 * Sets marker on last successfully downloaded id of transaction
 	 * @param int $transactionId
 	 * @return void
@@ -98,10 +98,10 @@ class Fio
 		$url = $this->buildRequestUrl('set', 'set-last-id', array($transactionId));
 		$this->callRequest($url);
 	}
-	
-	
-	
-	/** 
+
+
+
+	/**
 	 * Sets date of last unsuccessful attempt to download transactions
 	 * @param \DateTime $date
 	 * @return void
@@ -112,12 +112,12 @@ class Fio
 		$this->callRequest($url);
 	}
 
-	
 
 
-	
-	
-	
+
+
+
+
 	/**
 	 * Builds URL for download
 	 * @param string $type type of request get|set
@@ -129,24 +129,25 @@ class Fio
 		if(!in_array($type, array('get', 'set'))) {
 			throw new \InvalidArgumentException('Argument $type must be "get" or "set".');
 		}
-		
+
 		return $this->baseUrl.'/'.$action.'/'.$this->token.(!is_null($params) ? '/'.implode('/', $params) : '').'/'.($type === 'get' ? 'transactions.json' : '');
 	}
 
-	
-	/** 
+
+	/**
 	 * Calls request url and returns result
 	 * @param string $url
 	 * @return mixed
-	 */ 
+	 */
 	private function callRequest($url)
 	{
 		$ch = curl_init();
 		curl_setopt($ch, CURLOPT_URL, $url);
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+		curl_setopt ($ch, CURLOPT_CAINFO, __DIR__ . "/cert/cacert.pem");
 		$result = curl_exec($ch);
 		curl_close($ch);
-		
+
 		return json_decode($result);
 	}
 
